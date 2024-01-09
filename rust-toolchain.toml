@@ -1,2 +1,3 @@
 [toolchain]
-targets = ["aarch64-unknown-uefi", "i686-unknown-uefi", "x86_64-unknown-uefi"]
+# Uefi can be compiled for 32 targets but i support 64 bit only
+targets = ["x86_64-unknown-uefi"]

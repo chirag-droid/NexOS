@@ -19,7 +19,7 @@ QEMU_FLAGS=\
 	-accel kvm \
 	-net none \
 	-vga virtio \
-	-device virtio-rng-pci \
+	-serial mon:stdio \
 	-bios $(FIRMWARE_FILE)
 
 all: $(BUILD_DIR)/nex_os.iso
