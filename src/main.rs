@@ -1,25 +1,28 @@
 #![no_main]
 #![no_std]
 
-mod graphics;
+mod display;
 
-use embedded_graphics::transform::Transform;
-use graphics::Buffer;
+use display::GraphicsDisplay;
 
-use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::primitives::{Triangle, StyledDrawable, PrimitiveStyleBuilder};
-use embedded_graphics::mono_font::jis_x0201::FONT_10X20;
-use embedded_graphics::Drawable;
-use embedded_graphics::geometry::{Point, Dimensions, AnchorPoint, OriginDimensions};
-use embedded_graphics::mono_font::MonoTextStyle;
-use embedded_graphics::pixelcolor::{RgbColor, Rgb888};
-use embedded_graphics::text::{Text, Alignment};
-
-use uefi::proto::console::gop::GraphicsOutput;
-use uefi::proto::console::text::{Input, Key, ScanCode};
-use uefi::table::boot::BootServices;
-use uefi::table::{SystemTable, Boot};
-use uefi::{entry, Handle, Status, Result, ResultExt};
+use embedded_graphics::{
+    transform::Transform,
+    draw_target::DrawTarget,
+    primitives::{Triangle, StyledDrawable, PrimitiveStyleBuilder},
+    mono_font::jis_x0201::FONT_10X20,
+    Drawable,
+    geometry::{Point, Dimensions, AnchorPoint, OriginDimensions},
+    mono_font::MonoTextStyle,
+    pixelcolor::{RgbColor, Rgb888},
+    text::{Text, Alignment},
+};
+use uefi::{
+    proto::console::gop::GraphicsOutput,
+    proto::console::text::{Input, Key, ScanCode},
+    table::boot::BootServices,
+    table::{SystemTable, Boot},
+    entry, Handle, Status, Result, ResultExt
+};
 
 use log::info;
 
@@ -47,16 +50,13 @@ fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     let bs = system_table.boot_services();
 
-    // Open graphics output protocol.
     let gop_handle = bs.get_handle_for_protocol::<GraphicsOutput>().unwrap();
     let mut gop = bs.open_protocol_exclusive::<GraphicsOutput>(gop_handle).unwrap();
 
-    // Create a buffer
-    let resolution = gop.current_mode_info().resolution();
-    let mut display = Buffer::new(resolution.0, resolution.1);
+    // Create display buffer
+    let mut display = GraphicsDisplay::new(&mut gop);
     info!("Created a graphics buffer: {}x{}", display.size().width, display.size().height);
 
-    // Fill with gray color
     display.clear(Rgb888::new(0x22, 0x22, 0x22)).unwrap();
 
     // Draw centered text.
@@ -84,15 +84,12 @@ fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     .draw_styled(&style, &mut display)
     .unwrap();
 
-    display.blit(&mut gop).unwrap();
-
     // Read Key inputs
     {
-        let bt = system_table.boot_services();
         let mut unsafe_st = unsafe { system_table.unsafe_clone() };
         let input = unsafe_st.stdin();
-        read_keyboard_events(bt, input).expect("Encoutered an error while reading key events");
+        read_keyboard_events(bs, input).expect("Encoutered an error while reading key events");
    }
 
-    Status::ABORTED
+    Status::SUCCESS
 }
