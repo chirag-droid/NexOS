@@ -4,7 +4,7 @@ NexOS is a hobby operating system written in rust.
 
 ## WIP
 
-Loading Screen          | Nex OS
+Nex OS                  | Grub Menu
 :----------------------:|:-----------------------------:
 ![NexOS](assets/os.png) | ![Grub Menu](assets/menu.png)
 
