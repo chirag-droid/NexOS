@@ -3,7 +3,7 @@
 
 use log::info;
 
-use uefi::proto::console::text::{Key, Input, ScanCode};
+use uefi::proto::console::text::{Key, ScanCode, Input};
 use uefi::table::{SystemTable, Boot};
 use uefi::table::boot::BootServices;
 use uefi::{entry, Handle, Status, Result, ResultExt};
@@ -36,16 +36,20 @@ fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Resu
 fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     uefi_services::init(&mut system_table).unwrap();
 
-    system_table.stdout().set_cursor_position(0, 0);
+    {
+        let best_mode = system_table.stdout().modes().last().expect("No text mode was attached");
+        system_table.stdout().set_mode(best_mode).expect("Couldn't set best mode.");
+    }
 
     info!("Welcome to NexOS!");
-    
     print_tables(&system_table);
 
-    let boot_services = system_table.boot_services();
-    let mut unsafe_st = unsafe { system_table.unsafe_clone() };
-    let input = unsafe_st.stdin();
-    read_keyboard_events(boot_services, input);
+    {
+        let bt = system_table.boot_services();
+        let mut unsafe_st = unsafe { system_table.unsafe_clone() };
+        let input = unsafe_st.stdin();
+        read_keyboard_events(bt, input).expect("Encoutered an error while reading key events");
+    }
 
     Status::ABORTED
 }
