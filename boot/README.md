@@ -16,6 +16,6 @@ Grub provides following features out of the box.
 
 ## Theme
 
-I am using [Minegrub theme](https://raw.githubusercontent.com/Lxtharia/minegrub-theme) licenced under MIT Licence.
+I am using [Minegrub theme](https://github.com/Lxtharia/minegrub-theme) licenced under MIT Licence.
 
 See `grub/themes/minegrub/LICENCE` for details.
