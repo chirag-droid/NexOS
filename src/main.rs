@@ -36,7 +36,7 @@ fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Resu
 fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     uefi_services::init(&mut system_table).unwrap();
 
-    system_table.stdout().clear();
+    system_table.stdout().set_cursor_position(0, 0);
 
     info!("Welcome to NexOS!");
     

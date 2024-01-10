@@ -2,11 +2,16 @@
 
 NexOS is a hobby operating system written in rust.
 
+## WIP
+
+Loading Screen        | Nex OS
+:--------------------:|:--------------------:
+![Grub Loading screen](assets/menu.png) | ![NexOS](assets/os.png)
+
 ## Contents
 
 * [Documentaion](#documentation)
-* [Virtual Machine](#vm)
-* [How to contribute](#contribute)
+* [Toolchain](#toolchain)
 * [Licence](#licence)
 
 ## <a name="documentation"> Documentation </a>
@@ -16,27 +21,31 @@ Refer to comments and README files in each folder.
 Useful Sites:
 
 * [OSDev wiki]
+* [Archlinux wiki]
+* [UEFI Spec]
+* [Rust UEFI Target]
 
 [OSDev wiki]: http://wiki.osdev.org
+[Archlinux wiki]: https://wiki.archlinux.org/
+[UEFI Spec]: https://uefi.org/specifications
+[Rust UEFI Target]: https://doc.rust-lang.org/rustc/platform-support/unknown-uefi.html
 
 ## <a name="toolchain"> Toolchain </a>
 
-### <a name="vm"> A virtual machine </a>
+### Linux or WSL
 
-* You can use any VM but I prefer [Qemu]. [Qemu's Download Page] will help you install it. If the below command runs without error, congrats you have qemu installed.
+Use Windows WSL or Linux. Run `make` to see if everything runs and install the required tools.
 
-[Qemu]: https://www.qemu.org/
-[Qemu's Download Page]: https://www.qemu.org/download/
+`make qemu` will build the iso and also start qemu.
 
-```bash
-qemu-system-x86_64 --version
-```
+### Rust Toolchain
+https://www.rust-lang.org/tools/install
 
-## <a name="contribute">How to contribute</a>
+### <a name="vm"> QEMU virtual machine </a>
 
-Even though this is more of a personal project, it is open to Pull Requests.
+https://www.qemu.org/download/
 
-Try to make the code readable so it can be maintained in future if the project ever grows. Please feel free to fork this repo and contribute.
+`qemu-system-x86_64` command should be available.
 
 ## <a name="licence"> Licence </a>
 
