@@ -64,7 +64,7 @@ impl<'a, 'b> DrawTarget for GraphicsDisplay<'a, 'b> {
 
         let result = self.protocol.blt(BltOp::VideoFill {
             color: BltPixel::from(color.into_storage()),
-            dest: (0, 0),
+            dest: (area.top_left.x as usize, area.top_left.y as usize),
             dims: (area.size.width as usize, area.size.height as usize)
         });
 
