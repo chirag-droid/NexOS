@@ -6,22 +6,23 @@ mod display;
 use display::GraphicsDisplay;
 
 use embedded_graphics::{
-    transform::Transform,
     draw_target::DrawTarget,
-    primitives::{Triangle, StyledDrawable, PrimitiveStyleBuilder},
+    geometry::{AnchorPoint, Dimensions, OriginDimensions, Point},
     mono_font::jis_x0201::FONT_10X20,
-    Drawable,
-    geometry::{Point, Dimensions, AnchorPoint, OriginDimensions},
     mono_font::MonoTextStyle,
-    pixelcolor::{RgbColor, Rgb888},
-    text::{Text, Alignment},
+    pixelcolor::{Rgb888, RgbColor},
+    primitives::{PrimitiveStyleBuilder, StyledDrawable, Triangle},
+    text::{Alignment, Text},
+    transform::Transform,
+    Drawable,
 };
 use uefi::{
+    entry,
     proto::console::gop::GraphicsOutput,
     proto::console::text::{Input, Key, ScanCode},
     table::boot::BootServices,
-    table::{SystemTable, Boot},
-    entry, Handle, Status, Result, ResultExt
+    table::{Boot, SystemTable},
+    Handle, Result, ResultExt, Status,
 };
 
 use log::info;
@@ -36,8 +37,12 @@ fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Resu
 
         match input.read_key()? {
             Some(Key::Printable(key)) => info!("Received key input: {}", key),
-            Some(Key::Special(key)) => if key == ScanCode::ESCAPE { break; },
-            None => ()
+            Some(Key::Special(key)) => {
+                if key == ScanCode::ESCAPE {
+                    break;
+                }
+            }
+            None => (),
         }
     }
 
@@ -51,11 +56,17 @@ fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     let bs = system_table.boot_services();
 
     let gop_handle = bs.get_handle_for_protocol::<GraphicsOutput>().unwrap();
-    let mut gop = bs.open_protocol_exclusive::<GraphicsOutput>(gop_handle).unwrap();
+    let mut gop = bs
+        .open_protocol_exclusive::<GraphicsOutput>(gop_handle)
+        .unwrap();
 
     // Create display buffer
     let mut display = GraphicsDisplay::new(&mut gop);
-    info!("Created a graphics buffer: {}x{}", display.size().width, display.size().height);
+    info!(
+        "Created a graphics buffer: {}x{}",
+        display.size().width,
+        display.size().height
+    );
 
     display.clear(Rgb888::new(0x22, 0x22, 0x22)).unwrap();
 
@@ -78,7 +89,10 @@ fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
     Triangle::new(
         display.bounding_box().anchor_point(AnchorPoint::TopCenter) / 2,
         display.bounding_box().anchor_point(AnchorPoint::BottomLeft) / 2,
-        display.bounding_box().anchor_point(AnchorPoint::BottomRight) / 2,
+        display
+            .bounding_box()
+            .anchor_point(AnchorPoint::BottomRight)
+            / 2,
     )
     .translate(display.bounding_box().center() / 2)
     .draw_styled(&style, &mut display)
@@ -89,7 +103,7 @@ fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         let mut unsafe_st = unsafe { system_table.unsafe_clone() };
         let input = unsafe_st.stdin();
         read_keyboard_events(bs, input).expect("Encoutered an error while reading key events");
-   }
+    }
 
     Status::SUCCESS
 }

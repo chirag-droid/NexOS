@@ -1,9 +1,9 @@
-use embedded_graphics::Pixel;
 use embedded_graphics::draw_target::DrawTarget;
-use embedded_graphics::geometry::{OriginDimensions, Size, Dimensions};
-use embedded_graphics::pixelcolor::{Rgb888, IntoStorage};
+use embedded_graphics::geometry::{Dimensions, OriginDimensions, Size};
+use embedded_graphics::pixelcolor::{IntoStorage, Rgb888};
+use embedded_graphics::Pixel;
 
-use uefi::proto::console::gop::{BltPixel, GraphicsOutput, BltOp, BltRegion};
+use uefi::proto::console::gop::{BltOp, BltPixel, BltRegion, GraphicsOutput};
 use uefi::table::boot::ScopedProtocol;
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct DisplayError;
 /// We directly work on the gop to use the protocol features.
 pub struct GraphicsDisplay<'a, 'b> {
     /// The protol to the Graphics Output
-    protocol: &'b mut ScopedProtocol<'a, GraphicsOutput>
+    protocol: &'b mut ScopedProtocol<'a, GraphicsOutput>,
 }
 
 impl<'a, 'b> GraphicsDisplay<'a, 'b> {
@@ -35,8 +35,8 @@ impl<'a, 'b> DrawTarget for GraphicsDisplay<'a, 'b> {
 
     fn draw_iter<I>(&mut self, pixels: I) -> core::prelude::v1::Result<(), Self::Error>
     where
-        I: IntoIterator<Item = embedded_graphics::prelude::Pixel<Self::Color>> {
-        
+        I: IntoIterator<Item = embedded_graphics::prelude::Pixel<Self::Color>>,
+    {
         // TODO: Support multiple colors and write directly to framebuffer
         // Is there performance issues for calling blit again and again??
         for Pixel(coord, color) in pixels.into_iter() {
@@ -44,7 +44,7 @@ impl<'a, 'b> DrawTarget for GraphicsDisplay<'a, 'b> {
                 buffer: &[BltPixel::from(color.into_storage())],
                 src: BltRegion::Full,
                 dest: (coord.x as usize, coord.y as usize),
-                dims: (1, 1)
+                dims: (1, 1),
             });
 
             if result.is_err() {
@@ -55,7 +55,11 @@ impl<'a, 'b> DrawTarget for GraphicsDisplay<'a, 'b> {
         Ok(())
     }
 
-    fn fill_solid(&mut self, area: &embedded_graphics::primitives::Rectangle, color: Self::Color) -> core::prelude::v1::Result<(), Self::Error> {
+    fn fill_solid(
+        &mut self,
+        area: &embedded_graphics::primitives::Rectangle,
+        color: Self::Color,
+    ) -> core::prelude::v1::Result<(), Self::Error> {
         let area = area.intersection(&self.bounding_box());
 
         if area.is_zero_sized() {
@@ -65,11 +69,11 @@ impl<'a, 'b> DrawTarget for GraphicsDisplay<'a, 'b> {
         let result = self.protocol.blt(BltOp::VideoFill {
             color: BltPixel::from(color.into_storage()),
             dest: (area.top_left.x as usize, area.top_left.y as usize),
-            dims: (area.size.width as usize, area.size.height as usize)
+            dims: (area.size.width as usize, area.size.height as usize),
         });
 
         if result.is_ok() {
-            return Ok(())
+            return Ok(());
         }
 
         Err(DisplayError)
