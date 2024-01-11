@@ -1,0 +1,14 @@
+cargo-features = ["per-package-target"]
+
+[package]
+name = "boot"
+version = "0.1.0"
+authors = ["Chirag-droid <chirag.singla.pi@gmail.com>"]
+edition = "2021"
+forced-target = "x86_64-unknown-uefi"
+
+[dependencies]
+embedded-graphics = "0.8.1"
+log = "0.4.20"
+uefi = { version = "0.26.0", features = ["alloc"] }
+uefi-services = "0.23.0"

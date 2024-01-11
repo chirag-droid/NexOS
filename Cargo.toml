@@ -1,13 +1,6 @@
-[package]
-name = "nex_os"
-version = "0.1.0"
-authors = ["Chirag-droid <chirag.singla.pi@gmail.com>"]
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-embedded-graphics = "0.8.1"
-log = "0.4.20"
-uefi = { version = "0.26.0", features = ["alloc"] }
-uefi-services = "0.23.0"
+[workspace]
+members = [
+    "boot",
+    "kernel"
+]
+resolver = "2"

@@ -1,9 +1,9 @@
 #![no_main]
 #![no_std]
 
-mod display;
+mod graphics;
 
-use display::GraphicsDisplay;
+use graphics::UefiDisplay;
 
 use embedded_graphics::{
     draw_target::DrawTarget,
@@ -61,7 +61,7 @@ fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
         .unwrap();
 
     // Create display buffer
-    let mut display = GraphicsDisplay::new(&mut gop);
+    let mut display = UefiDisplay::new(&mut gop);
     info!(
         "Created a graphics buffer: {}x{}",
         display.size().width,

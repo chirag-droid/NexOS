@@ -1,3 +1,7 @@
 [toolchain]
-# Uefi can be compiled for 32 targets but i support 64 bit only
-targets = ["x86_64-unknown-uefi"]
+# cargo `per-package-target` feature
+channel = "nightly-2024-01-11"
+
+# "bootloader" -> uefi format
+# "kernel"     -> bare metal binary
+targets = ["x86_64-unknown-uefi", "x86_64-unknown-none"]

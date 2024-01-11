@@ -11,25 +11,25 @@ pub struct DisplayError;
 
 /// A display to represent the graphics output
 /// We directly work on the gop to use the protocol features.
-pub struct GraphicsDisplay<'a, 'b> {
+pub struct UefiDisplay<'a, 'b> {
     /// The protol to the Graphics Output
     protocol: &'b mut ScopedProtocol<'a, GraphicsOutput>,
 }
 
-impl<'a, 'b> GraphicsDisplay<'a, 'b> {
+impl<'a, 'b> UefiDisplay<'a, 'b> {
     pub fn new(protocol: &'b mut ScopedProtocol<'a, GraphicsOutput>) -> Self {
-        GraphicsDisplay { protocol }
+        UefiDisplay { protocol }
     }
 }
 
-impl<'a, 'b> OriginDimensions for GraphicsDisplay<'a, 'b> {
+impl<'a, 'b> OriginDimensions for UefiDisplay<'a, 'b> {
     fn size(&self) -> Size {
         let resolution = self.protocol.current_mode_info().resolution();
         Size::new(resolution.0 as u32, resolution.1 as u32)
     }
 }
 
-impl<'a, 'b> DrawTarget for GraphicsDisplay<'a, 'b> {
+impl<'a, 'b> DrawTarget for UefiDisplay<'a, 'b> {
     type Color = Rgb888;
     type Error = DisplayError;
 
