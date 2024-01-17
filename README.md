@@ -4,9 +4,13 @@ NexOS is a hobby operating system written in rust.
 
 ## WIP
 
-Bootlaoder                           | About
-:-----------------------------------:|:--------------------------:
-![Bootloader](assets/bootloader.png) |:![About](assets/about.png):
+Bootlaoder                           | 
+:-----------------------------------:|
+![Bootloader](assets/bootloader.png) |
+
+About                       |
+:--------------------------:|
+:![About](assets/about.png):|
 
 ## Contents
 
