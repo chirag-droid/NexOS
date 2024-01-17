@@ -1,0 +1,90 @@
+import { GridBox, TabWidget , Button, HorizontalBox} from "std-widgets.slint";
+
+import "../assets/Geist-Regular.otf";
+
+export component Main inherits Window {
+    callback shutdown;
+    callback reboot;
+    in property <string> firmware-vendor;
+    in property <string> firmware-version;
+    in property <string> uefi-version;
+    in property <bool> secure-boot;
+
+    default-font-size: 22px;
+    default-font-family: "Geist";
+
+    TabWidget {
+        width: root.width;
+        height: root.height;
+
+        Tab {
+            title: "NexOS";
+            GridBox {
+                Row {
+                    Text {
+                        colspan: 2;
+                        text: "Welcome To NexOS!";
+                        horizontal-alignment: center;
+                        font-size: 44px;
+                        font-weight: 600;
+                    }
+                }
+
+                Row { Rectangle {} }
+
+                HorizontalBox {
+                    Button {
+                        text: "Shutdown";
+                        clicked => { root.shutdown() } 
+                    }
+                    Button {
+                        text: "Reboot";
+                        clicked => { root.reboot() }
+                    }
+                }
+            }
+        }
+
+        Tab {
+            title: "About";
+            GridBox {
+                Row {
+                    Text {
+                        colspan: 2;
+                        text: "About";
+                        horizontal-alignment: center;
+                        font-size: 44px;
+                        font-weight: 600;
+                    }
+                }
+
+                Row {
+                    Text { text: "Firmware vendor:"; }
+                    Text { text: firmware-vendor; Rectangle {} }
+                }
+
+                Row {
+                    Text { text: "Firmware version:"; }
+                    Text { text: firmware-version; }
+                }
+
+                Row {
+                    Text { text: "UEFI version:"; }
+                    Text { text: uefi-version; }
+                }
+
+                Row {
+                    Text { text: "Secure boot:"; }
+                    Text { text: secure-boot ? "enabled" : "disabled"; }
+                }
+
+                Row {
+                    Text { text: "Resolution:"; }
+                    Text { text: "\{floor(root.width / 1px)}x\{floor(root.height / 1px)}"; }
+                }
+
+                Row { Rectangle {} }
+            }
+        }
+    }
+}

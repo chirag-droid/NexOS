@@ -7,7 +7,6 @@ FIRMWARE_FILE?=firmware/ovmf.fd
 QEMU?=qemu-system-x86_64
 QEMU_FLAGS=\
 	-cpu qemu64 \
-	-accel kvm \
 	-net none \
 	-vga virtio \
 	-serial mon:stdio
@@ -15,7 +14,7 @@ QEMU_FLAGS=\
 all: ${BUILD_DIR}/NexOS.img
 
 qemu: ${FIRMWARE_FILE} ${BUILD_DIR}/NexOS.img
-	sudo ${QEMU} ${QEMU_FLAGS} -bios ${FIRMWARE_FILE} -drive format=raw,file=${BUILD_DIR}/NexOS.img
+	${QEMU} ${QEMU_FLAGS} -bios ${FIRMWARE_FILE} -drive format=raw,file=${BUILD_DIR}/NexOS.img
 
 ${BUILD_DIR}/NexOS.img: ${BUILD_DIR}/BOOTX64.efi
 	mkdir -p ${BUILD_DIR}
@@ -35,7 +34,7 @@ ${BUILD_DIR}/NexOS.img: ${BUILD_DIR}/BOOTX64.efi
 
 	dd if=/tmp/part.img of=$@ bs=512 count=91669 seek=2048 conv=notrunc
 
-${BUILD_DIR}/BOOTX64.efi: 
+${BUILD_DIR}/BOOTX64.efi: boot/* boot/*/*
 	mkdir -p ${BUILD_DIR}
 	cargo build -p boot --release
 	cp target/x86_64-unknown-uefi/release/boot.efi $@

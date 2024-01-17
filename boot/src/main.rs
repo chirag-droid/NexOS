@@ -2,108 +2,69 @@
 #![no_std]
 
 mod graphics;
+mod input;
+mod platform;
+mod time;
 
-use graphics::UefiDisplay;
+extern crate alloc;
 
-use embedded_graphics::{
-    draw_target::DrawTarget,
-    geometry::{AnchorPoint, Dimensions, OriginDimensions, Point},
-    mono_font::jis_x0201::FONT_10X20,
-    mono_font::MonoTextStyle,
-    pixelcolor::{Rgb888, RgbColor},
-    primitives::{PrimitiveStyleBuilder, StyledDrawable, Triangle},
-    text::{Alignment, Text},
-    transform::Transform,
-    Drawable,
+use alloc::{
+    boxed::Box,
+    format,
+    string::{String, ToString},
 };
-use uefi::{
-    entry,
-    proto::console::gop::GraphicsOutput,
-    proto::console::text::{Input, Key, ScanCode},
-    table::boot::BootServices,
-    table::{Boot, SystemTable},
-    Handle, Result, ResultExt, Status,
-};
+use log::{error, info};
+use platform::Platform;
+use uefi::{prelude::*, table::runtime::ResetType};
 
-use log::info;
-
-fn read_keyboard_events(boot_services: &BootServices, input: &mut Input) -> Result {
-    loop {
-        // Pause until a keyboard event occurs.
-        let mut events = [input.wait_for_key_event().unwrap()];
-        boot_services
-            .wait_for_event(&mut events)
-            .discard_errdata()?;
-
-        match input.read_key()? {
-            Some(Key::Printable(key)) => info!("Received key input: {}", key),
-            Some(Key::Special(key)) => {
-                if key == ScanCode::ESCAPE {
-                    break;
-                }
-            }
-            None => (),
-        }
-    }
-
-    Ok(())
-}
+slint::include_modules!();
 
 #[entry]
-fn main(handle: Handle, mut system_table: SystemTable<Boot>) -> Status {
-    uefi_services::init(&mut system_table).unwrap();
-
-    let bs = system_table.boot_services();
-
-    let gop_handle = bs.get_handle_for_protocol::<GraphicsOutput>().unwrap();
-    let mut gop = bs
-        .open_protocol_exclusive::<GraphicsOutput>(gop_handle)
+fn main(_image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
+    uefi_services::init(&mut st)
+        .inspect(|_| info!("UEFI Services initialised."))
+        .inspect_err(|error| error!("UEFI Services: {}", error.status()))
         .unwrap();
 
-    // Create display buffer
-    let mut display = UefiDisplay::new(&mut gop);
-    info!(
-        "Created a graphics buffer: {}x{}",
-        display.size().width,
-        display.size().height
+    slint::platform::set_platform(Box::<Platform>::default()).unwrap();
+
+    let ui = Main::new().unwrap();
+
+    ui.set_firmware_vendor(String::from_utf16_lossy(st.firmware_vendor().to_u16_slice()).into());
+    ui.set_firmware_version(
+        format!(
+            "{}.{:02}",
+            st.firmware_revision() >> 16,
+            st.firmware_revision() & 0xffff
+        )
+        .into(),
     );
+    ui.set_uefi_version(st.uefi_revision().to_string().into());
 
-    display.clear(Rgb888::new(0x22, 0x22, 0x22)).unwrap();
+    let mut buf = [0u8; 1];
+    let guid = uefi::table::runtime::VariableVendor::GLOBAL_VARIABLE;
+    let sb = st
+        .runtime_services()
+        .get_variable(cstr16!("SecureBoot"), &guid, &mut buf);
+    ui.set_secure_boot(if sb.is_ok() { buf[0] == 1 } else { false });
 
-    // Draw centered text.
-    let character_style = MonoTextStyle::new(&FONT_10X20, Rgb888::WHITE);
-    let text = "Welcome To NexOS!";
-    Text::with_alignment(
-        text,
-        display.bounding_box().anchor_point(AnchorPoint::TopCenter) + Point::new(0, 20),
-        character_style,
-        Alignment::Center,
-    )
-    .draw(&mut display)
-    .unwrap();
-
-    // Draw a filled triangle.
-    let style = PrimitiveStyleBuilder::new()
-        .fill_color(Rgb888::WHITE)
-        .build();
-    Triangle::new(
-        display.bounding_box().anchor_point(AnchorPoint::TopCenter) / 2,
-        display.bounding_box().anchor_point(AnchorPoint::BottomLeft) / 2,
-        display
-            .bounding_box()
-            .anchor_point(AnchorPoint::BottomRight)
-            / 2,
-    )
-    .translate(display.bounding_box().center() / 2)
-    .draw_styled(&style, &mut display)
-    .unwrap();
-
-    // Read Key inputs
     {
-        let mut unsafe_st = unsafe { system_table.unsafe_clone() };
-        let input = unsafe_st.stdin();
-        read_keyboard_events(bs, input).expect("Encoutered an error while reading key events");
+        let st = unsafe { st.unsafe_clone() };
+        ui.on_reboot(move || {
+            info!("Rebooting system");
+            st.runtime_services().reset(ResetType::COLD, Status::ABORTED, None);
+        });
     }
+
+    {
+        let st = unsafe { st.unsafe_clone() };
+        ui.on_shutdown(move || {
+            info!("Shutting down the system");
+            st.runtime_services().reset(ResetType::SHUTDOWN, Status::ABORTED, None);
+        });
+    }
+
+    ui.run().unwrap();
 
     Status::SUCCESS
 }

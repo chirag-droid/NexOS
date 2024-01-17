@@ -8,7 +8,16 @@ edition = "2021"
 forced-target = "x86_64-unknown-uefi"
 
 [dependencies]
-embedded-graphics = "0.8.1"
-log = "0.4.20"
 uefi = { version = "0.26.0", features = ["alloc"] }
 uefi-services = "0.23.0"
+log = "0.4.20"
+slint = { version = "1.3.2", default-features = false, features = [
+    "compat-1-2",
+    "renderer-software",
+    "libm",
+    "log",
+    "unsafe-single-threaded"
+]}
+
+[build-dependencies]
+slint-build = "1.3.2"
