@@ -29,6 +29,13 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
         .inspect_err(|error| error!("UEFI Services: {}", error.status()))
         .unwrap();
 
+    let console = st.stdout();
+    if let Some(mode) = console.modes().last() {
+        console.set_mode(mode)
+            .inspect_err(|e| error!("Setting best mode: {}", e.status()))
+            .unwrap();
+    }
+
     slint::platform::set_platform(Box::<Platform>::default()).unwrap();
 
     let ui = Main::new().unwrap();
@@ -82,7 +89,7 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
             // Get kernel entry point and execute it
             let kstart: extern "efiapi" fn() -> i32 =
                 unsafe { core::mem::transmute(kernel.elf.header.pt2.entry_point()) };
-            
+
             info!("Kernel returned: {}", kstart());
         });
     }

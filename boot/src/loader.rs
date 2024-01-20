@@ -3,7 +3,6 @@ use uefi::{
     table::boot::{AllocateType, MemoryType, PAGE_SIZE},
     CStr16,
 };
-use x86_64::PhysAddr;
 use xmas_elf::{program::Type, ElfFile};
 
 use crate::fs::load_file;
@@ -27,11 +26,6 @@ pub fn parse_kernel(filename: &CStr16) -> Kernel {
 pub fn load_kernel(kernel: &Kernel) {
     let st = uefi_services::system_table();
     let bs = st.boot_services();
-
-    let offset = PhysAddr::new(&kernel.elf.input[0] as *const u8 as u64);
-    if !offset.is_aligned(PAGE_SIZE as u64) {
-        panic!("ELF file is not correctly aligned");
-    }
 
     // Somehow this code works
     for segment in kernel.elf.program_iter() {
