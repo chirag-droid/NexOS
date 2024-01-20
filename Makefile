@@ -9,6 +9,7 @@ QEMU_FLAGS=\
 	-cpu qemu64 \
 	-net none \
 	-vga virtio \
+	-m 256M \
 	-serial mon:stdio
 
 all: ${BUILD_DIR}/NexOS.img
@@ -16,7 +17,7 @@ all: ${BUILD_DIR}/NexOS.img
 qemu: ${FIRMWARE_FILE} ${BUILD_DIR}/NexOS.img
 	${QEMU} ${QEMU_FLAGS} -bios ${FIRMWARE_FILE} -drive format=raw,file=${BUILD_DIR}/NexOS.img
 
-${BUILD_DIR}/NexOS.img: ${BUILD_DIR}/BOOTX64.efi
+${BUILD_DIR}/NexOS.img: ${BUILD_DIR}/BOOTX64.efi ${BUILD_DIR}/NexOS/kernel
 	mkdir -p ${BUILD_DIR}
 
 	# Create 48MB zeroed disk image file
@@ -28,9 +29,13 @@ ${BUILD_DIR}/NexOS.img: ${BUILD_DIR}/BOOTX64.efi
 	
 	dd if=/dev/zero of=/tmp/part.img bs=512 count=91669
 	mformat -i /tmp/part.img -h 32 -t 32 -n 64 -c 1
+
 	mmd -i /tmp/part.img ::/EFI
 	mmd -i /tmp/part.img ::/EFI/BOOT
-	mcopy -i /tmp/part.img $< ::/EFI/BOOT
+	mcopy -i /tmp/part.img ${BUILD_DIR}/BOOTX64.efi ::/EFI/BOOT
+
+	mmd -i /tmp/part.img ::/NexOS
+	mcopy -i /tmp/part.img ${BUILD_DIR}/NexOS/kernel ::/NexOS
 
 	dd if=/tmp/part.img of=$@ bs=512 count=91669 seek=2048 conv=notrunc
 
@@ -38,6 +43,11 @@ ${BUILD_DIR}/BOOTX64.efi: boot/* boot/*/*
 	mkdir -p ${BUILD_DIR}
 	cargo build -p boot --release
 	cp target/x86_64-unknown-uefi/release/boot.efi $@
+
+${BUILD_DIR}/NexOS/kernel: kernel/* kernel/*/* linkers/*
+	mkdir -p ${BUILD_DIR}/NexOS
+	cargo build -p kernel --release
+	cp target/x86_64-unknown-none/release/kernel $@
 
 clean:
 	cargo clean

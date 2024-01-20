@@ -6,3 +6,7 @@ version = "0.1.0"
 authors = ["Chirag-droid <chirag.singla.pi@gmail.com>"]
 edition = "2021"
 forced-target = "x86_64-unknown-none"
+
+[profile.release]
+panic = "abort"
+lto = true

@@ -5,12 +5,14 @@ import "../assets/Geist-Regular.otf";
 export component Main inherits Window {
     callback shutdown;
     callback reboot;
+    callback load_kernel;
+
     in property <string> firmware-vendor;
     in property <string> firmware-version;
     in property <string> uefi-version;
     in property <bool> secure-boot;
 
-    default-font-size: 22px;
+    default-font-size: 24px;
     default-font-family: "Geist";
 
     TabWidget {
@@ -25,9 +27,14 @@ export component Main inherits Window {
                         colspan: 2;
                         text: "Welcome To NexOS!";
                         horizontal-alignment: center;
-                        font-size: 44px;
+                        font-size: 48px;
                         font-weight: 600;
                     }
+                }
+
+                HorizontalBox {
+                    alignment: center;
+                    Button { text: "Load kernel"; clicked => { root.load-kernel() } }
                 }
 
                 Row { Rectangle {} }

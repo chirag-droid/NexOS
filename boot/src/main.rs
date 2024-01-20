@@ -1,8 +1,10 @@
 #![no_main]
 #![no_std]
 
+mod fs;
 mod graphics;
 mod input;
+mod loader;
 mod platform;
 mod time;
 
@@ -13,6 +15,7 @@ use alloc::{
     format,
     string::{String, ToString},
 };
+use loader::{load_kernel, parse_kernel};
 use log::{error, info};
 use platform::Platform;
 use uefi::{prelude::*, table::runtime::ResetType};
@@ -20,7 +23,7 @@ use uefi::{prelude::*, table::runtime::ResetType};
 slint::include_modules!();
 
 #[entry]
-fn main(_image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
+fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     uefi_services::init(&mut st)
         .inspect(|_| info!("UEFI Services initialised."))
         .inspect_err(|error| error!("UEFI Services: {}", error.status()))
@@ -49,18 +52,38 @@ fn main(_image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     ui.set_secure_boot(if sb.is_ok() { buf[0] == 1 } else { false });
 
     {
+        // Don't use boot services here!
         let st = unsafe { st.unsafe_clone() };
         ui.on_reboot(move || {
             info!("Rebooting system");
-            st.runtime_services().reset(ResetType::COLD, Status::ABORTED, None);
+            st.runtime_services()
+                .reset(ResetType::COLD, Status::ABORTED, None);
         });
     }
 
     {
+        // Don't use boot services here!
         let st = unsafe { st.unsafe_clone() };
         ui.on_shutdown(move || {
             info!("Shutting down the system");
-            st.runtime_services().reset(ResetType::SHUTDOWN, Status::ABORTED, None);
+            st.runtime_services()
+                .reset(ResetType::SHUTDOWN, Status::ABORTED, None);
+        });
+    }
+
+    {
+        ui.on_load_kernel(move || {
+            // Parse kernel from file
+            let kernel = parse_kernel(cstr16!("\\NexOS\\kernel"));
+
+            // Load kernel in memory
+            load_kernel(&kernel);
+
+            // Get kernel entry point and execute it
+            let kstart: extern "efiapi" fn() -> i32 =
+                unsafe { core::mem::transmute(kernel.elf.header.pt2.entry_point()) };
+            
+            info!("Kernel returned: {}", kstart());
         });
     }
 
