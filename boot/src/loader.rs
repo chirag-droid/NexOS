@@ -1,3 +1,6 @@
+extern crate alloc;
+
+use alloc::{vec, vec::Vec};
 use log::info;
 use uefi::{
     table::boot::{AllocateType, MemoryType, PAGE_SIZE},
@@ -27,6 +30,10 @@ pub fn load_kernel(kernel: &Kernel) {
     let st = uefi_services::system_table();
     let bs = st.boot_services();
 
+    // This is a poor way of handling used up addresses
+    // This should be handled by the code calling this function
+    let mut used_pages: Vec<u64> = vec![];
+
     // Somehow this code works
     for segment in kernel.elf.program_iter() {
         if let Ok(Type::Load) = segment.get_type() {
@@ -34,15 +41,16 @@ pub fn load_kernel(kernel: &Kernel) {
             let pages = ((segment.mem_size() - 1) / PAGE_SIZE as u64) + 1;
             let address = segment.virtual_addr() & !(PAGE_SIZE as u64 - 1);
 
-            // TODO: This returns an error when allocating page at the same address
-            // Need a better way to map memory
-            // The error is not handled!!!
-            info!("Allocating {pages}pages at {:x}", address);
-            bs.allocate_pages(
-                AllocateType::Address(address),
-                MemoryType::LOADER_DATA,
-                pages as usize,
-            );
+            if !used_pages.contains(&address) {
+                bs.allocate_pages(
+                    AllocateType::Address(address),
+                    MemoryType::LOADER_DATA,
+                    pages as usize,
+                )
+                .unwrap();
+
+                used_pages.extend(vec![1u64; pages as usize].iter().map(|x| x * address));
+            }
 
             // Write the Kernel to the address
             unsafe {
