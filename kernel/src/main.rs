@@ -4,8 +4,8 @@
 use core::panic::PanicInfo;
 
 #[no_mangle]
-pub extern "C" fn kstart() -> i32 {
-    return 123;
+pub extern "C" fn kstart() -> ! {
+    loop {}
 }
 
 /// This function is called on panic.

@@ -5,7 +5,7 @@ import "../assets/Geist-Regular.otf";
 export component Main inherits Window {
     callback shutdown;
     callback reboot;
-    callback load_kernel;
+    callback close;
 
     in property <string> firmware-vendor;
     in property <string> firmware-version;
@@ -34,7 +34,7 @@ export component Main inherits Window {
 
                 HorizontalBox {
                     alignment: center;
-                    Button { text: "Load kernel"; clicked => { root.load-kernel() } }
+                    Button { text: "Exit & Load kernel"; clicked => { root.close() } }
                 }
 
                 Row { Rectangle {} }

@@ -18,7 +18,11 @@ use alloc::{
 use loader::{load_kernel, parse_kernel};
 use log::{error, info};
 use platform::Platform;
-use uefi::{prelude::*, table::runtime::ResetType};
+use slint::platform::WindowEvent;
+use uefi::{
+    prelude::*,
+    table::{boot::MemoryType, runtime::ResetType},
+};
 
 slint::include_modules!();
 
@@ -31,7 +35,8 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
 
     let console = st.stdout();
     if let Some(mode) = console.modes().last() {
-        console.set_mode(mode)
+        console
+            .set_mode(mode)
             .inspect_err(|e| error!("Setting best mode: {}", e.status()))
             .unwrap();
     }
@@ -79,22 +84,25 @@ fn main(image_handle: Handle, mut st: SystemTable<Boot>) -> Status {
     }
 
     {
-        ui.on_load_kernel(move || {
-            // Parse kernel from file
-            let kernel = parse_kernel(cstr16!("\\NexOS\\kernel"));
-
-            // Load kernel in memory
-            load_kernel(&kernel);
-
-            // Get kernel entry point and execute it
-            let kstart: extern "efiapi" fn() -> i32 =
-                unsafe { core::mem::transmute(kernel.elf.header.pt2.entry_point()) };
-
-            info!("Kernel returned: {}", kstart());
+        let ui_weak = ui.as_weak().unwrap();
+        ui.on_close(move || {
+            ui_weak.window().dispatch_event(WindowEvent::CloseRequested);
         });
     }
 
     ui.run().unwrap();
 
-    Status::SUCCESS
+    // Parse kernel from file
+    let kernel = parse_kernel(cstr16!("\\NexOS\\kernel"));
+
+    // Load kernel in memory
+    load_kernel(&kernel);
+
+    let _ = st.exit_boot_services(MemoryType::LOADER_DATA);
+
+    // Get kernel entry point and execute it
+    let kstart: extern "efiapi" fn() -> ! =
+        unsafe { core::mem::transmute(kernel.elf.header.pt2.entry_point()) };
+
+    kstart();
 }

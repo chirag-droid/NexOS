@@ -113,6 +113,16 @@ impl slint::platform::Platform for Platform {
                 .unwrap();
             });
 
+            if !self.window.is_visible() {
+                gop.blt(BltOp::VideoFill {
+                    color: BltPixel::new(0, 0, 0),
+                    dest: (0, 0),
+                    dims: info.resolution(),
+                })
+                .unwrap();
+                return Ok(());
+            }
+
             if !self.window.has_active_animations() {
                 wait_for_input(slint::platform::duration_until_next_timer_update());
             }
